@@ -100,6 +100,8 @@ footer{border-top:1px solid var(--ln);color:var(--mu);font-size:12px;padding:20p
 
 </div></main>
 <footer><div class="in">Pasangsurut tidak menyimpan kunci atau dana. Transaksi ditandatangani di wallet kamu. Swap dirutekan lewat Jupiter, data pool dari API Orca. Gunakan dengan risiko sendiri.</div></footer>
+
+<div id="lp" style="display:none;position:fixed;inset:0;background:#000a;z-index:8;align-items:center;justify-content:center;padding:20px"><div class="cd" style="width:100%;max-width:380px"><div class="hd"><span id="lpt">Tambah likuiditas</span><button onclick="lpClose()">Tutup</button></div><div class="f" style="grid-template-columns:1fr"><div><label id="lpl">Jumlah</label><input id="lpa" type="number" inputmode="decimal" placeholder="0.00"></div><div><label>Lebar range (±%)</label><select id="lpr"><option>5</option><option selected>10</option><option>20</option></select></div></div><button class="pr w" id="lpb" onclick="lpGo()">Buat posisi</button><p class="mu" style="font-size:12px;margin:12px 0 0">Kamu perlu punya kedua token di wallet. Jumlah token kedua dihitung otomatis.</p></div></div>
 <div id="ts" role="status"></div>
 
 <script>
@@ -160,7 +162,7 @@ async function loadPools(){if(P.length)return;
  catch(e){$('pl').innerHTML='<span class="bad">Gagal memuat pools.</span>'}}
 function rp(){const q=$('q').value.toLowerCase();
  $('pl').style.padding=0;$('pl').innerHTML=P.filter(p=>(p.tokenA.symbol+'/'+p.tokenB.symbol).toLowerCase().includes(q)).map(p=>{const s=p.stats?.['24h']||{};
- return `<div class="tb"><b>${p.tokenA.symbol}/${p.tokenB.symbol}</b><span class="n">${fmt(p.feeRate/10000,3)}%</span><span class="n">${usd(+p.tvlUsdc)}</span><span class="n">${usd(+s.volume)}</span><span class="n ok">${s.yieldOverTvl!=null?fmt(s.yieldOverTvl*36500,1)+'%':'-'}</span><a target="_blank" rel="noopener" href="https://www.orca.so/pools/${p.address}">Tambah</a></div>`}).join('')||'<div class="mu" style="padding:16px 0">Tidak ada hasil.</div>'}
+ return `<div class="tb"><b>${p.tokenA.symbol}/${p.tokenB.symbol}</b><span class="n">${fmt(p.feeRate/10000,3)}%</span><span class="n">${usd(+p.tvlUsdc)}</span><span class="n">${usd(+s.volume)}</span><span class="n ok">${s.yieldOverTvl!=null?fmt(s.yieldOverTvl*36500,1)+'%':'-'}</span><a href="#" onclick="lpOpen('${p.address}');return false">Tambah</a></div>`}).join('')||'<div class="mu" style="padding:16px 0">Tidak ada hasil.</div>'}
 async function loadFolio(){if(!pk)return;$('fl').textContent='Memuat';
  try{const b=await bals();let h='<div class="tb h" style="grid-template-columns:1fr 1fr 1fr"><span>Token</span><span class="n">Jumlah</span><span class="n">Nilai</span></div>';
  for(const k in b){if(!b[k])continue;let v=b[k];if(k!=='USDC'&&k!=='USDT'){try{const x=Math.min(b[k],1)||1,q=await quote(k,'USDC',x,false);v=q.outAmount/1e6/x*b[k]}catch(e){v=NaN}}
@@ -190,4 +192,20 @@ async function botAct(a){const o=$('bo');o.textContent='Memuat';localStorage.adm
   o.innerHTML=row('Pair',j.pair)+row('Harga',fmt(j.price,6))+row('Wallet bot','<span style="font-size:12px;word-break:break-all">'+j.wallet+'</span>')+row('Saldo A',fmt(j.balanceA,6))+row('Saldo B',fmt(j.balanceB,6))+row('Lebar range','±'+j.range+'%')+
   (j.positions.map(p=>row('Posisi',fmt(p.lower,4)+' - '+fmt(p.upper,4)+' <span class="'+(p.inRange?'ok':'bad')+'">'+(p.inRange?'dalam range':'keluar range')+'</span>')).join('')||row('Posisi','Belum ada'))}
  catch(e){o.innerHTML='<span class="bad">Gagal terhubung ke /api/bot</span>'}}
+/* Tambah likuiditas langsung di situs ini */
+let LP=null;
+function lpOpen(a){LP=P.find(p=>p.address===a);if(!LP)return;
+ if(!pk){connect();return toast('Hubungkan wallet dulu, lalu ketuk Tambah lagi.','bad')}
+ $('lpt').textContent='Tambah likuiditas '+LP.tokenA.symbol+'/'+LP.tokenB.symbol;$('lpl').textContent='Jumlah '+LP.tokenA.symbol;$('lp').style.display='flex'}
+function lpClose(){$('lp').style.display='none'}
+async function lpGo(){
+ const v=parseFloat($('lpa').value);if(!v||v<=0)return toast('Isi jumlah dulu','bad');
+ const b=$('lpb');b.disabled=true;b.textContent='Menyiapkan';
+ try{const r=await fetch('/api/lp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owner:pk.toString(),pool:LP.address,amount:v,pct:+$('lpr').value})}),j=await r.json();
+  if(j.error)throw new Error(j.error);
+  b.textContent='Menunggu wallet';
+  const tx=S.VersionedTransaction.deserialize(Uint8Array.from(atob(j.tx),c=>c.charCodeAt(0)));
+  const sg=await prov.signTransaction(tx),sig=await C.sendRawTransaction(sg.serialize(),{maxRetries:3});await confirmTx(sig);
+  lpClose();toast(`Posisi dibuat. <a style="color:var(--ac)" target="_blank" rel="noopener" href="https://solscan.io/tx/${sig}">Lihat transaksi</a>`,'ok')}
+ catch(e){toast('Gagal: '+(e.message||e),'bad')}b.disabled=false;b.textContent='Buat posisi'}
 </script></body></html>
