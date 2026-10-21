@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pasangsurut | Swap, Pools dan Auto Rebalance di Solana</title>
+<meta name="description" content="Swap token, jelajahi pool Orca, dan jalankan autozap serta auto rebalance di Solana.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.0/lib/index.iife.min.js"></script>
+<style>
+:root{--bg:#09151e;--pn:#0e1e2a;--pn2:#132a3a;--ln:#1d3444;--tx:#e6eef2;--mu:#7f97a6;--ac:#2fbfb0;--acd:#06241f;--bad:#f27d7d;--ok:#4ecb8f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.in{max-width:1000px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:5;background:#09151eee;backdrop-filter:blur(8px);border-bottom:1px solid var(--ln)}
+header .in{display:flex;align-items:center;gap:20px;min-height:60px;flex-wrap:wrap}
+.lg{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+nav{display:flex;gap:2px;flex:1;overflow-x:auto}nav button{background:none;color:var(--mu);padding:8px 12px;border-radius:8px;font-weight:500}
+nav button.on{color:var(--tx);background:var(--pn2)}
+.r{display:flex;align-items:center;gap:12px;margin-left:auto}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mu)}.dot.ok{background:var(--ok)}.dot.er{background:var(--bad)}
+button,select,input{font:inherit;color:var(--tx)}button{cursor:pointer;border:0;border-radius:8px;padding:9px 14px;background:var(--pn2);font-weight:500}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.pr{background:var(--ac);color:var(--acd);font-weight:600}.pr.w{width:100%;padding:14px;font-size:15px}button:disabled{opacity:.5;cursor:default}
+main{padding:28px 0 60px}.tab[hidden]{display:none}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mu);margin:0 0 20px}
+.cd{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:20px}
+.sw{max-width:460px;margin:0 auto}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-weight:600}
+.ch{display:flex;gap:4px}.ch button{padding:4px 10px;font-size:12px;background:none;border:1px solid var(--ln);color:var(--mu)}.ch button.on{border-color:var(--ac);color:var(--ac)}
+.bx{background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:12px 14px}.bx:focus-within{border-color:var(--ac)}
+.bx .t{display:flex;justify-content:space-between;color:var(--mu);font-size:12px;margin-bottom:6px}
+.bx .m{display:flex;gap:10px;align-items:center}.bx input{flex:1;min-width:0;background:none;border:0;font-size:24px;font-weight:600;padding:0}
+select{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;font-weight:600}
+.f select,.f input{width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:9px 10px;font-weight:500;font-size:14px}
+.mx{background:none;color:var(--ac);padding:0;font-size:12px}
+.fl{display:flex;justify-content:center;margin:-10px 0;position:relative;z-index:1}.fl button{padding:6px;border:4px solid var(--pn);border-radius:10px;line-height:0}
+.dl{margin:16px 0;font-size:13px}.dl div{display:flex;justify-content:space-between;padding:4px 0;color:var(--mu);gap:12px}.dl b{color:var(--tx);font-weight:500;text-align:right}
+.st{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.st .cd{padding:14px 16px}.st small{color:var(--mu);display:block}.st b{font-size:20px}
+.sr{width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:9px 12px;margin-bottom:12px}
+.tb{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 90px;gap:8px;padding:12px 4px;border-bottom:1px solid var(--ln);align-items:center}
+.tb.h{color:var(--mu);font-size:12px;font-weight:500}.tb:last-child{border:0}.tb .n{text-align:right}.tb a{color:var(--ac);text-decoration:none;font-weight:500;text-align:right}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.f{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.f label{display:block;color:var(--mu);font-size:12px;margin-bottom:4px}
+.tg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--ln)}.tg small{color:var(--mu);display:block}
+.tg input{width:18px;height:18px;accent-color:#2fbfb0}
+.br{height:10px;background:var(--bg);border-radius:6px;position:relative;margin:12px 0 6px;border:1px solid var(--ln)}
+.br i{position:absolute;inset:0 auto 0 0;background:var(--ac);border-radius:6px;transition:width .4s}.br u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}
+#log{height:200px;overflow:auto;background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:10px;font:12px/1.7 ui-monospace,Menlo,monospace;color:var(--mu);margin-top:12px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mu{color:var(--mu)}
+#ts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--pn2);border:1px solid var(--ln);padding:12px 16px;border-radius:10px;display:none;z-index:9;max-width:90vw}
+footer{border-top:1px solid var(--ln);color:var(--mu);font-size:12px;padding:20px 0}
+@media(max-width:760px){.g2{grid-template-columns:1fr}.tb{grid-template-columns:2fr 1fr 1fr 70px}.tb>:nth-child(2),.tb>:nth-child(4){display:none}.st b{font-size:16px}nav{order:3;flex-basis:100%;padding-bottom:8px}}
+</style></head><body>
+<header><div class="in">
+<div class="lg"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2fbfb0" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 8c3-3 5-3 8 0s5 3 8 0 3-2 4-1M2 15c3-3 5-3 8 0s5 3 8 0 3-2 4-1"/></svg>Pasangsurut</div>
+<nav id="nav"><button class="on" data-t="swap">Swap</button><button data-t="pools">Pools</button><button data-t="auto">Bot Browser</button><button data-t="bot">Bot LP</button><button data-t="folio">Portofolio</button></nav>
+<div class="r"><span class="dot" id="rd" title="RPC otomatis"></span><button class="pr" id="wb" onclick="connect()">Hubungkan wallet</button></div>
+</div></header>
+<main><div class="in">
+
+<section id="swap" class="tab"><div class="cd sw">
+<div class="hd"><span>Swap</span><div class="ch" id="ch" title="Slippage"></div></div>
+<div class="bx"><div class="t"><span>Bayar</span><span><span id="fb"></span> <button class="mx" onclick="maxB()">Max</button></span></div><div class="m"><input id="amt" type="number" inputmode="decimal" placeholder="0.00" oninput="debQ()"><select id="from" onchange="debQ()"></select></div></div>
+<div class="fl"><button onclick="flip()" aria-label="Tukar arah"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16m0 0-4-4m4 4 4-4M17 20V4m0 0-4 4m4-4 4 4"/></svg></button></div>
+<div class="bx"><div class="t"><span>Terima</span></div><div class="m"><input id="out" readonly placeholder="0.00"><select id="to" onchange="debQ()"></select></div></div>
+<div class="dl"><div><span>Harga</span><b id="d1">-</b></div><div><span>Dampak harga</span><b id="d2">-</b></div><div><span>Rute</span><b id="d3">-</b></div><div><span>Hanya rute Orca</span><b><input type="checkbox" id="orca" checked onchange="debQ()" style="accent-color:#2fbfb0"></b></div></div>
+<button class="pr w" id="sb" onclick="doSwap()">Masukkan jumlah</button>
+</div></section>
+
+<section id="pools" class="tab" hidden>
+<h1>Pools</h1><p class="sub">Pool Orca dengan volume tertinggi dalam 24 jam.</p>
+<div class="st"><div class="cd"><small>TVL</small><b id="s1">-</b></div><div class="cd"><small>Volume 24j</small><b id="s2">-</b></div><div class="cd"><small>Pools</small><b id="s3">-</b></div></div>
+<input class="sr" id="q" placeholder="Cari pool, contoh SOL" oninput="rp()">
+<div class="cd" style="padding:8px 16px"><div class="tb h"><span>Pool</span><span class="n">Fee</span><span class="n">TVL</span><span class="n">Volume 24j</span><span class="n">APR</span><span></span></div><div id="pl" class="mu" style="padding:16px 0">Memuat…</div></div>
+</section>
+
+<section id="auto" class="tab" hidden>
+<h1>Autozap dan Auto Rebalance</h1><p class="sub">Jaga rasio dua token di wallet kamu sesuai target.</p>
+<div class="g2"><div class="cd">
+<div class="f"><div><label>Token A</label><select id="aA"></select></div><div><label>Token B</label><select id="aB"></select></div>
+<div><label>Target A (%)</label><input id="tgt" type="number" value="50"></div><div><label>Toleransi (%)</label><input id="thr" type="number" value="5"></div>
+<div><label>Interval (detik)</label><input id="iv" type="number" value="30"></div><div><label>Sisa SOL untuk fee</label><input id="rs" type="number" value="0.02" step="0.01"></div>
+<div><label>Nilai minimum (B)</label><input id="mn" type="number" value="10"></div><div><label>Deposit minimum zap (B)</label><input id="zm" type="number" value="10"></div></div>
+<div class="tg"><span>Autozap<small>Deposit baru langsung dibagi ke rasio target</small></span><input type="checkbox" id="zap" checked></div>
+<div class="tg"><span>Auto rebalance<small>Kembalikan rasio saat melewati toleransi</small></span><input type="checkbox" id="reb" checked></div>
+<button class="pr w" id="ab" onclick="toggleBot()" style="margin-top:12px">Mulai bot</button>
+</div><div class="cd">
+<div class="hd"><span>Status</span><span class="mu" id="bs">Berhenti</span></div>
+<div class="mu" id="rt">Belum ada data.</div><div class="br"><i id="bf" style="width:0"></i><u id="bt" style="left:50%"></u></div>
+<div class="mu" id="tt" style="font-size:12px">Garis putih menunjukkan target.</div>
+<div id="log">Bot belum berjalan.</div>
+<p class="mu" style="font-size:12px;margin:12px 0 0">Bot aktif selama tab terbuka dan setiap swap meminta persetujuan di wallet.</p>
+</div></div></section>
+
+<section id="bot" class="tab" hidden><h1>Bot LP</h1><p class="sub">Berjalan di server Vercel dengan wallet bot khusus, aktif terus lewat pinger.</p>
+<div class="g2"><div class="cd"><div class="f" style="grid-template-columns:1fr"><div><label>Kunci admin (CRON_SECRET)</label><input id="adm" type="password" autocomplete="off"></div></div>
+<button class="pr w" onclick="botAct('status')">Muat status</button>
+<div class="f" style="margin:12px 0"><button onclick="botAct('open')">Buka posisi</button><button onclick="botAct('close')">Tutup posisi</button></div>
+<button style="width:100%" onclick="botAct('run')">Jalankan siklus sekarang</button>
+<p class="mu" style="font-size:12px">Kirim dana ke alamat wallet bot untuk mengisi posisi. Pakai wallet khusus dengan dana terbatas.</p></div>
+<div class="cd" id="bo">Masukkan kunci admin lalu muat status.</div></div></section>
+<section id="folio" class="tab" hidden><h1>Portofolio</h1><p class="sub">Saldo token utama di wallet kamu.</p><div class="cd" id="fl">Hubungkan wallet untuk melihat saldo.</div></section>
+
+</div></main>
+<footer><div class="in">Pasangsurut tidak menyimpan kunci atau dana. Transaksi ditandatangani di wallet kamu. Swap dirutekan lewat Jupiter, data pool dari API Orca. Gunakan dengan risiko sendiri.</div></footer>
+<div id="ts" role="status"></div>
+
+<script>
+const $=i=>document.getElementById(i),J='https://lite-api.jup.ag/swap/v1',TP='TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const T={SOL:['So11111111111111111111111111111111111111112',9],USDC:['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',6],USDT:['Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',6],ORCA:['orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE',6],JUP:['JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',6],BONK:['DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',5]};
+const S=window.solanaWeb3;let pk=null,prov=null,Q=null,bot=null,busy=false,last=null,P=[],slp=+(localStorage.slp||0.5);
+/* RPC otomatis: coba endpoint berurutan, ingat yang berhasil */
+const EP=()=>(['/api/rpc','https://solana-rpc.publicnode.com','https://solana.drpc.org','https://api.mainnet-beta.solana.com']);
+let ei=0;
+async function rf(u,o){const L=EP();
+ for(let n=0;n<L.length;n++){const i=(ei+n)%L.length;
+  try{const r=await fetch(L[i],o);if(!r.ok)continue;const j=await r.clone().json(),e=(Array.isArray(j)?j[0]:j)?.error;
+   if(e&&/limit|forbidden|unauthori|key|plan|too many/i.test(e.message||''))continue;
+   ei=i;$('rd').className='dot ok';$('rd').title='RPC: '+L[i].replace(/^https?:\/\//,'').split('/')[0];return r}catch(x){}}
+ $('rd').className='dot er';throw new Error('Semua RPC sibuk. Coba lagi sebentar.')}
+const C=new S.Connection('https://solana-rpc.publicnode.com',{commitment:'confirmed',fetch:rf});
+const fmt=(n,d=4)=>Number(n).toLocaleString('en',{maximumFractionDigits:d}),usd=n=>n==null||isNaN(n)?'-':'$'+fmt(n,0);
+function toast(m,c=''){const t=$('ts');t.innerHTML=m;t.className=c;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',5000)}
+for(const id of['from','to','aA','aB'])$(id).innerHTML=Object.keys(T).map(k=>`<option>${k}</option>`).join('');
+$('from').value='SOL';$('to').value='USDC';$('aA').value='SOL';$('aB').value='USDC';
+const chips=()=>$('ch').innerHTML=[0.1,0.5,1].map(v=>`<button class="${v===slp?'on':''}" onclick="slp=${v};localStorage.slp=${v};chips();debQ()">${v}%</button>`).join('');chips();
+$('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===e.target));document.querySelectorAll('.tab').forEach(m=>m.hidden=m.id!==t);if(t==='pools')loadPools();if(t==='folio')loadFolio()};
+async function connect(){
+ prov=window.phantom?.solana||window.solana||window.solflare;
+ if(!prov)return toast('Wallet tidak ditemukan. Buka lewat browser Phantom atau Solflare.','bad');
+ try{const r=await prov.connect();pk=r.publicKey||prov.publicKey;const s=pk.toString();$('wb').textContent=s.slice(0,4)+'...'+s.slice(-4);refreshBal()}catch(e){toast('Koneksi dibatalkan','bad')}}
+async function bals(){const o={SOL:await C.getBalance(pk)/1e9};
+ const r=await C.getParsedTokenAccountsByOwner(pk,{programId:new S.PublicKey(TP)});
+ for(const a of r.value){const i=a.account.data.parsed.info;for(const k in T)if(T[k][0]===i.mint)o[k]=(o[k]||0)+i.tokenAmount.uiAmount}return o}
+let B0={};async function refreshBal(){if(!pk)return;try{B0=await bals();$('fb').textContent='Saldo '+fmt(B0[$('from').value]||0)}catch(e){}}
+function maxB(){const k=$('from').value,v=Math.max(0,(B0[k]||0)-(k==='SOL'?0.01:0));$('amt').value=v;debQ()}
+async function quote(a,b,amt,orca){
+ const q=new URLSearchParams({inputMint:T[a][0],outputMint:T[b][0],amount:Math.floor(amt*10**T[a][1]),slippageBps:Math.round(slp*100)});
+ if(orca){q.set('dexes','Whirlpool,Orca V2');const r=await fetch(`${J}/quote?${q}`);if(r.ok)return r.json()}
+ q.delete('dexes');const r=await fetch(`${J}/quote?${q}`);if(!r.ok)throw new Error('Rute tidak ditemukan');return r.json()}
+async function confirmTx(sig){for(let i=0;i<40;i++){const s=(await C.getSignatureStatuses([sig])).value[0];if(s){if(s.err)throw new Error('Transaksi gagal di chain');if(s.confirmationStatus!=='processed')return}await new Promise(r=>setTimeout(r,1500))}throw new Error('Konfirmasi timeout')}
+async function send(q){
+ const r=await fetch(J+'/swap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quoteResponse:q,userPublicKey:pk.toString(),wrapAndUnwrapSol:true,dynamicComputeUnitLimit:true,prioritizationFeeLamports:'auto'})});
+ const j=await r.json();if(!j.swapTransaction)throw new Error('Transaksi gagal dibuat');
+ const tx=S.VersionedTransaction.deserialize(Uint8Array.from(atob(j.swapTransaction),c=>c.charCodeAt(0)));
+ const sg=await prov.signTransaction(tx),sig=await C.sendRawTransaction(sg.serialize(),{maxRetries:3});await confirmTx(sig);return sig}
+let dt;function debQ(){clearTimeout(dt);dt=setTimeout(getQ,450);refreshBal()}
+async function getQ(){
+ const a=$('from').value,b=$('to').value,v=parseFloat($('amt').value);Q=null;$('out').value='';['d1','d2','d3'].forEach(i=>$(i).textContent='-');
+ $('sb').textContent=v?'Mencari rute':'Masukkan jumlah';if(!v||a===b)return;
+ try{Q=await quote(a,b,v,$('orca').checked);const o=Q.outAmount/10**T[b][1],pi=Q.priceImpactPct*100;$('out').value=fmt(o,6);
+  $('d1').textContent=`1 ${a} = ${fmt(o/v,6)} ${b}`;$('d2').textContent=fmt(pi,3)+'%';$('d2').className=pi>1?'bad':'';
+  $('d3').textContent=(Q.routePlan||[]).map(p=>p.swapInfo.label).join(', ');$('sb').textContent=pk?'Swap':'Hubungkan wallet'}
+ catch(e){$('sb').textContent='Rute tidak tersedia'}}
+function flip(){const a=$('from').value;$('from').value=$('to').value;$('to').value=a;debQ()}
+async function doSwap(){
+ if(!pk)return connect();if(!Q)return;const b=$('sb');b.disabled=true;b.textContent='Menunggu wallet';
+ try{const s=await send(Q);toast(`Swap berhasil. <a style="color:var(--ac)" target="_blank" rel="noopener" href="https://solscan.io/tx/${s}">Lihat transaksi</a>`,'ok');refreshBal()}
+ catch(e){toast('Gagal: '+(e.message||e),'bad')}b.disabled=false;b.textContent='Swap'}
+async function loadPools(){if(P.length)return;
+ try{const r=await fetch('https://api.orca.so/v2/solana/pools?sortBy=volume&sortDirection=desc&size=40&minTvl=100000&minVolume=10000');P=(await r.json()).data||[];
+  $('s1').textContent=usd(P.reduce((a,p)=>a+ +p.tvlUsdc,0));$('s2').textContent=usd(P.reduce((a,p)=>a+ +(p.stats?.['24h']?.volume||0),0));$('s3').textContent=P.length;rp()}
+ catch(e){$('pl').innerHTML='<span class="bad">Gagal memuat pools.</span>'}}
+function rp(){const q=$('q').value.toLowerCase();
+ $('pl').style.padding=0;$('pl').innerHTML=P.filter(p=>(p.tokenA.symbol+'/'+p.tokenB.symbol).toLowerCase().includes(q)).map(p=>{const s=p.stats?.['24h']||{};
+ return `<div class="tb"><b>${p.tokenA.symbol}/${p.tokenB.symbol}</b><span class="n">${fmt(p.feeRate/10000,3)}%</span><span class="n">${usd(+p.tvlUsdc)}</span><span class="n">${usd(+s.volume)}</span><span class="n ok">${s.yieldOverTvl!=null?fmt(s.yieldOverTvl*36500,1)+'%':'-'}</span><a target="_blank" rel="noopener" href="https://www.orca.so/pools/${p.address}">Tambah</a></div>`}).join('')||'<div class="mu" style="padding:16px 0">Tidak ada hasil.</div>'}
+async function loadFolio(){if(!pk)return;$('fl').textContent='Memuat';
+ try{const b=await bals();let h='<div class="tb h" style="grid-template-columns:1fr 1fr 1fr"><span>Token</span><span class="n">Jumlah</span><span class="n">Nilai</span></div>';
+ for(const k in b){if(!b[k])continue;let v=b[k];if(k!=='USDC'&&k!=='USDT'){try{const x=Math.min(b[k],1)||1,q=await quote(k,'USDC',x,false);v=q.outAmount/1e6/x*b[k]}catch(e){v=NaN}}
+ h+=`<div class="tb" style="grid-template-columns:1fr 1fr 1fr"><b>${k}</b><span class="n">${fmt(b[k],6)}</span><span class="n">${isNaN(v)?'-':'$'+fmt(v,2)}</span></div>`}
+ $('fl').innerHTML=h}catch(e){$('fl').innerHTML='<span class="bad">Gagal memuat saldo.</span>'}}
+/* Autozap dan auto rebalance */
+const lg=m=>{const l=$('log');l.innerHTML+=`<div>${new Date().toLocaleTimeString()}  ${m}</div>`;l.scrollTop=l.scrollHeight};
+function toggleBot(){
+ if(bot){clearInterval(bot);bot=null;$('ab').textContent='Mulai bot';$('bs').textContent='Berhenti';return lg('Bot berhenti.')}
+ if(!pk)return connect();if($('aA').value===$('aB').value)return toast('Pilih dua token berbeda','bad');
+ last=null;$('log').innerHTML='';$('ab').textContent='Hentikan bot';$('bs').textContent='Berjalan';lg('Bot berjalan.');tick();bot=setInterval(tick,Math.max(10,$('iv').value)*1000)}
+async function tick(){if(busy)return;busy=true;
+ try{const A=$('aA').value,B=$('aB').value,tgt=+$('tgt').value,thr=+$('thr').value,rs=+$('rs').value,b=await bals(),rv=k=>k==='SOL'?rs:0;
+  const uA=Math.max(0,(b[A]||0)-rv(A)),uB=Math.max(0,(b[B]||0)-rv(B)),pq=await quote(A,B,1,false),price=pq.outAmount/10**T[B][1],vA=uA*price,tot=vA+uB;
+  if(tot<+$('mn').value){lg('Nilai di bawah minimum, dilewati.');last=tot;return}
+  const sh=vA/tot*100;$('rt').textContent=`${A} ${fmt(sh,1)}%  |  ${B} ${fmt(100-sh,1)}%  |  total ${fmt(tot,2)} ${B}`;$('bf').style.width=sh+'%';$('bt').style.left=tgt+'%';$('tt').textContent='Target '+A+' '+tgt+'%, toleransi '+thr+'%';
+  const zap=$('zap').checked&&last!=null&&tot-last>=+$('zm').value,reb=$('reb').checked&&Math.abs(sh-tgt)>thr;
+  if(zap||reb){const d=tgt/100*tot-vA;let f,t,a;if(d>0){f=B;t=A;a=Math.min(d,uB)}else{f=A;t=B;a=Math.min(-d/price,uA)}
+   if(a>0){lg(`${zap?'Autozap':'Rebalance'}: ${fmt(a,6)} ${f} ke ${t}`);const sig=await send(await quote(f,t,a,true));lg(`<span class="ok">Selesai</span> ${sig.slice(0,10)}`)}}
+  last=tot}catch(e){lg('<span class="bad">'+(e.message||e)+'</span>')}busy=false}
+$('adm').value=localStorage.adm||'';
+const row=(k,v)=>`<div class="tg"><span class="mu">${k}</span><b style="font-weight:500">${v}</b></div>`;
+async function botAct(a){const o=$('bo');o.textContent='Memuat';localStorage.adm=$('adm').value;
+ try{const r=await fetch('/api/bot?action='+a,{headers:{'x-admin':$('adm').value}}),j=await r.json();
+  if(j.error){o.innerHTML='<span class="bad">'+j.error+'</span>';return}
+  if(a!=='status'){o.innerHTML='<div class="ok">Selesai</div><pre style="white-space:pre-wrap;margin:8px 0 0;font:12px ui-monospace,monospace">'+JSON.stringify(j,null,1)+'</pre><p class="mu">Muat status untuk memperbarui.</p>';return}
+  o.innerHTML=row('Pair',j.pair)+row('Harga',fmt(j.price,6))+row('Wallet bot','<span style="font-size:12px;word-break:break-all">'+j.wallet+'</span>')+row('Saldo A',fmt(j.balanceA,6))+row('Saldo B',fmt(j.balanceB,6))+row('Lebar range','±'+j.range+'%')+
+  (j.positions.map(p=>row('Posisi',fmt(p.lower,4)+' - '+fmt(p.upper,4)+' <span class="'+(p.inRange?'ok':'bad')+'">'+(p.inRange?'dalam range':'keluar range')+'</span>')).join('')||row('Posisi','Belum ada'))}
+ catch(e){o.innerHTML='<span class="bad">Gagal terhubung ke /api/bot</span>'}}
+</script></body></html>
