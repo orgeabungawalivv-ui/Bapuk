@@ -1,2 +1,2 @@
 {"name":"pasangsurut","version":"2.0.0","private":true,"type":"module","engines":{"node":">=20"},
-"dependencies":{"@orca-so/whirlpools":"latest","@orca-so/whirlpools-client":"latest","@orca-so/whirlpools-core":"latest","@solana/kit":"^2.3.0","@solana/web3.js":"^1.98.0","bs58":"^6.0.0"}}
+"dependencies":{"@orca-so/whirlpools":"latest","@orca-so/whirlpools-client":"latest","@orca-so/whirlpools-core":"latest","@solana/kit":"^5.0.0","@solana/web3.js":"^1.98.0","bs58":"^6.0.0"}}
